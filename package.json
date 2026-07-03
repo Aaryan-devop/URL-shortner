@@ -9,7 +9,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+<<<<<<< HEAD
     "ejs": "^6.0.1",
+=======
+>>>>>>> 287784ff86f454b38368198f14909e7aa15c0441
     "express": "^5.2.1",
     "mongoose": "^9.7.3",
     "nanoid": "^5.1.16",
