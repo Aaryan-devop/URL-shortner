@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Spool — measure twice, ship one link</title>
+<meta name="description" content="A short url for every long one. Paste, shorten, share." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14181b;
+    --ink-2:#191e21;
+    --panel:#1b2124;
+    --panel-2:#20272b;
+    --line:#333c41;
+    --steel:#7c8a90;
+    --paper:#ece6d9;
+    --paper-dim:#b9b3a4;
+    --yellow:#f4c22b;
+    --yellow-ink:#241b04;
+    --teal:#4db8ad;
+    --red:#e2543a;
+    --radius:14px;
+    --font-display:"Big Shoulders Display", sans-serif;
+    --font-body:"Inter", system-ui, sans-serif;
+    --font-mono:"IBM Plex Mono", monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--ink);
+    color:var(--paper);
+    font-family:var(--font-body);
+    min-height:100vh;
+    position:relative;
+    overflow-x:hidden;
+  }
+
+  .ticktape{
+    position:fixed;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+    background-image:
+      repeating-linear-gradient(90deg, rgba(244,194,43,0.055) 0 1px, transparent 1px 40px),
+      repeating-linear-gradient(90deg, rgba(244,194,43,0.09) 0 2px, transparent 2px 200px);
+    background-position: 0 0, 0 0;
+    animation: driftTape 60s linear infinite;
+  }
+  .glow{
+    position:fixed;
+    z-index:0;
+    width:60vw;
+    height:60vw;
+    max-width:900px;
+    max-height:900px;
+    top:-20vw;
+    right:-15vw;
+    background:radial-gradient(circle, rgba(77,184,173,0.16), transparent 65%);
+    pointer-events:none;
+  }
+  @keyframes driftTape{
+    from{background-position:0 0, 0 0;}
+    to{background-position:-2000px 0, -2000px 0;}
+  }
+
+  .wrap{position:relative; z-index:1; max-width:1040px; margin:0 auto; padding:0 24px 100px;}
+
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:32px 0 18px;
+  }
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand svg{width:30px;height:30px;flex-shrink:0;}
+  .brand-word{
+    font-family:var(--font-display);
+    font-weight:800;
+    font-size:22px;
+    letter-spacing:0.02em;
+    color:var(--paper);
+  }
+  .brand-word span{color:var(--yellow);}
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:0.16em;
+    text-transform:uppercase;
+    color:var(--steel);
+  }
+
+  .hero{padding:38px 0 10px;}
+  .kicker{
+    font-family:var(--font-mono);
+    font-size:12px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--yellow);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:18px;
+  }
+  .kicker::before{
+    content:"";
+    width:26px;height:1px;
+    background:var(--yellow);
+    display:inline-block;
+  }
+  h1{
+    font-family:var(--font-display);
+    font-weight:900;
+    font-size:clamp(40px, 7vw, 76px);
+    line-height:0.94;
+    letter-spacing:-0.01em;
+    margin:0 0 20px;
+    text-transform:uppercase;
+  }
+  h1 em{
+    font-style:normal;
+    color:var(--yellow);
+  }
+  .sub{
+    font-size:17px;
+    line-height:1.6;
+    color:var(--paper-dim);
+    max-width:520px;
+    margin:0 0 40px;
+  }
+
+  .bench{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:22px;
+    position:relative;
+    overflow:hidden;
+  }
+  .bench::before{
+    content:"";
+    position:absolute;
+    top:0; left:0; right:0; height:3px;
+    background:repeating-linear-gradient(90deg, var(--yellow) 0 14px, transparent 14px 28px);
+    opacity:0.8;
+  }
+  form#shortenForm{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .field{
+    flex:1 1 320px;
+    position:relative;
+    display:flex;
+    align-items:center;
+  }
+  .field svg{
+    position:absolute;
+    left:16px;
+    width:18px;height:18px;
+    color:var(--steel);
+    pointer-events:none;
+  }
+  #urlInput{
+    width:100%;
+    background:var(--ink-2);
+    border:1px solid var(--line);
+    color:var(--paper);
+    font-family:var(--font-mono);
+    font-size:15px;
+    padding:16px 16px 16px 44px;
+    border-radius:10px;
+    outline:none;
+    transition:border-color .18s ease, box-shadow .18s ease, letter-spacing .3s ease, opacity .3s ease;
+  }
+  #urlInput::placeholder{color:var(--steel);}
+  #urlInput:focus{
+    border-color:var(--yellow);
+    box-shadow:0 0 0 3px rgba(244,194,43,0.16);
+  }
+  #urlInput.spooling{
+    letter-spacing:-2px;
+    opacity:0.35;
+  }
+  button#shortenBtn{
+    flex:0 0 auto;
+    background:var(--yellow);
+    color:var(--yellow-ink);
+    border:none;
+    font-family:var(--font-display);
+    font-weight:800;
+    letter-spacing:0.02em;
+    text-transform:uppercase;
+    font-size:16px;
+    padding:0 26px;
+    border-radius:10px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
+  }
+  button#shortenBtn:hover{transform:translateY(-1px); box-shadow:0 6px 18px rgba(244,194,43,0.25);}
+  button#shortenBtn:active{transform:translateY(0px) scale(0.98);}
+  button#shortenBtn:disabled{opacity:0.75; cursor:progress; transform:none;}
+  button#shortenBtn .spinner{
+    width:16px;height:16px;
+    border-radius:50%;
+    border:2px solid rgba(36,27,4,0.35);
+    border-top-color:var(--yellow-ink);
+    display:none;
+    animation:spin .7s linear infinite;
+  }
+  button#shortenBtn.loading .spinner{display:inline-block;}
+  button#shortenBtn.loading .btn-label{display:none;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .form-error{
+    font-family:var(--font-mono);
+    font-size:13px;
+    color:var(--red);
+    margin:12px 2px 0;
+    display:none;
+  }
+  .form-error.show{display:block;}
+
+  .result{
+    margin-top:18px;
+    display:none;
+    align-items:center;
+    gap:14px;
+    flex-wrap:wrap;
+    padding:16px;
+    background:var(--panel-2);
+    border:1px dashed var(--line);
+    border-radius:10px;
+    opacity:0;
+    transform:translateY(6px) scale(0.98);
+  }
+  .result.show{
+    display:flex;
+    animation:tagIn .5s cubic-bezier(.2,1.4,.4,1) forwards;
+  }
+  @keyframes tagIn{
+    to{opacity:1; transform:translateY(0) scale(1);}
+  }
+  .tag-ring{width:10px;height:10px;border:2px solid var(--yellow); border-radius:50%; flex-shrink:0;}
+  .result-link{
+    font-family:var(--font-mono);
+    font-size:16px;
+    color:var(--teal);
+    text-decoration:none;
+    word-break:break-all;
+  }
+  .result-link:hover{text-decoration:underline;}
+  .result-actions{display:flex; gap:8px; margin-left:auto;}
+  .icon-btn{
+    width:36px;height:36px;
+    display:flex; align-items:center; justify-content:center;
+    background:transparent;
+    border:1px solid var(--line);
+    border-radius:8px;
+    color:var(--paper-dim);
+    cursor:pointer;
+    transition:border-color .15s ease, color .15s ease, background .15s ease;
+  }
+  .icon-btn svg{width:16px;height:16px;}
+  .icon-btn:hover{border-color:var(--yellow); color:var(--yellow);}
+  .icon-btn.danger:hover{border-color:var(--red); color:var(--red);}
+  .icon-btn.copied{border-color:var(--teal); color:var(--teal);}
+
+  .panel-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin:64px 0 14px;
+  }
+  .panel-head h2{
+    font-family:var(--font-display);
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:0.01em;
+    font-size:22px;
+    margin:0;
+  }
+  .panel-count{
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--steel);
+  }
+
+  .ruler{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    overflow:hidden;
+  }
+  .row{
+    display:grid;
+    grid-template-columns: 108px 1fr 72px 96px 92px;
+    align-items:center;
+    gap:14px;
+    padding:14px 18px;
+    border-bottom:1px solid var(--line);
+    transition:background .15s ease, opacity .35s ease, transform .35s ease, max-height .35s ease, padding .35s ease;
+  }
+  .row.head{
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--steel);
+    background:var(--panel-2);
+  }
+  .row:last-child{border-bottom:none;}
+  .row:not(.head):hover{background:rgba(244,194,43,0.04);}
+  .row.removing{
+    opacity:0;
+    transform:translateX(12px);
+    max-height:0;
+    padding-top:0;
+    padding-bottom:0;
+    overflow:hidden;
+  }
+  .row.enter{animation:rowIn .4s ease both;}
+  @keyframes rowIn{
+    from{opacity:0; transform:translateY(-6px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+  .code{
+    font-family:var(--font-mono);
+    color:var(--yellow);
+    font-size:14px;
+  }
+  .dest{
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-size:14px;
+    color:var(--paper);
+  }
+  .dest a{color:inherit; text-decoration:none;}
+  .dest a:hover{color:var(--teal);}
+  .hits{
+    font-family:var(--font-mono);
+    font-size:13px;
+    color:var(--paper-dim);
+  }
+  .made{
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--steel);
+  }
+  .row-actions{display:flex; gap:6px; justify-content:flex-end;}
+  .row-actions .icon-btn{width:30px;height:30px;}
+  .row-actions .icon-btn svg{width:14px;height:14px;}
+
+  .empty{
+    padding:60px 24px;
+    text-align:center;
+    color:var(--paper-dim);
+  }
+  .empty svg{width:40px;height:40px;color:var(--line); margin-bottom:14px;}
+  .empty p{margin:0; font-size:14px;}
+  .empty .hint{font-family:var(--font-mono); font-size:12px; color:var(--steel); margin-top:6px;}
+
+  footer{
+    margin-top:70px;
+    padding-top:20px;
+    border-top:1px solid var(--line);
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--steel);
+    letter-spacing:0.04em;
+  }
+
+  .toast{
+    position:fixed;
+    bottom:26px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--font-mono);
+    font-size:13px;
+    padding:12px 18px;
+    border-radius:8px;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .25s ease, transform .25s ease;
+    z-index:20;
+    box-shadow:0 10px 30px rgba(0,0,0,0.35);
+  }
+  .toast.show{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+  }
+
+  @media (max-width:640px){
+    .row{grid-template-columns: 84px 1fr 60px; }
+    .made, .row-actions{display:none;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important;}
+    .ticktape{animation:none;}
+  }
+</style>
+</head>
+<body>
+
+<div class="ticktape"></div>
+<div class="glow"></div>
+
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="9" stroke="#f4c22b" stroke-width="2"/>
+        <path d="M12 3v3M12 18v3M3 12h3M18 12h3" stroke="#f4c22b" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="12" cy="12" r="2.4" fill="#f4c22b"/>
+      </svg>
+      <div>
+        <div class="brand-word">SPO<span>OL</span></div>
+      </div>
+    </div>
+    <div class="eyebrow">URL Shortener</div>
+  </header>
+
+  <section class="hero">
+    <div class="kicker">Measure once</div>
+    <h1>Long link in.<br>Short link <em>out.</em></h1>
+    <p class="sub">Paste anything. Get back something small enough to say out loud, text to a friend, or fit on a business card.</p>
+
+    <div class="bench">
+      <form id="shortenForm" autocomplete="off">
+        <label class="field">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.07 0l1.93-1.93a5 5 0 0 0-7.07-7.07L10.5 5.5"/><path d="M14 11a5 5 0 0 0-7.07 0L5 12.93a5 5 0 0 0 7.07 7.07L13.5 18.5"/></svg>
+          <input id="urlInput" name="url" type="url" inputmode="url" placeholder="https://your-very-long-address.example.com/goes/here" required />
+        </label>
+        <button id="shortenBtn" type="submit">
+          <span class="spinner"></span>
+          <span class="btn-label">Shorten it</span>
+        </button>
+      </form>
+      <div class="form-error" id="formError"></div>
+
+      <div class="result" id="result">
+        <span class="tag-ring"></span>
+        <a class="result-link" id="resultLink" href="#" target="_blank" rel="noopener"></a>
+        <div class="result-actions">
+          <button class="icon-btn" id="copyBtn" title="Copy link" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+          </button>
+          <a class="icon-btn" id="openBtn" title="Open link" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="panel-head">
+      <h2>On the spool</h2>
+      <span class="panel-count" id="panelCount"><%= urls.length %> link<%= urls.length === 1 ? '' : 's' %></span>
+    </div>
+
+    <div class="ruler" id="ruler">
+      <div class="row head">
+        <span>Code</span>
+        <span>Destination</span>
+        <span>Hits</span>
+        <span>Made</span>
+        <span></span>
+      </div>
+
+      <div id="rowsContainer">
+        <% urls.forEach(function(u){ %>
+          <div class="row" data-id="<%= u.shortd %>">
+            <span class="code"><%= u.shortd %></span>
+            <span class="dest"><a href="<%= u.redirecturl %>" target="_blank" rel="noopener"><%= u.redirecturl %></a></span>
+            <span class="hits"><%= (u.visithistory || []).length %></span>
+            <span class="made"><%= u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—' %></span>
+            <span class="row-actions">
+              <button class="icon-btn" data-action="copy" data-code="<%= u.shortd %>" title="Copy">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+              </button>
+              <button class="icon-btn danger" data-action="delete" data-code="<%= u.shortd %>" title="Delete">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+              </button>
+            </span>
+          </div>
+        <% }); %>
+      </div>
+
+      <div class="empty" id="emptyState" style="<%= urls.length ? 'display:none;' : '' %>">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>
+        <p>Nothing on the spool yet.</p>
+        <p class="hint">Shorten your first link above.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>SPOOL &middot; built on express + mongo</span>
+    <span id="clock"></span>
+  </footer>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  var ORIGIN = <%- JSON.stringify(origin) %>;
+
+  var form = document.getElementById('shortenForm');
+  var input = document.getElementById('urlInput');
+  var btn = document.getElementById('shortenBtn');
+  var errorBox = document.getElementById('formError');
+  var result = document.getElementById('result');
+  var resultLink = document.getElementById('resultLink');
+  var copyBtn = document.getElementById('copyBtn');
+  var openBtn = document.getElementById('openBtn');
+  var rowsContainer = document.getElementById('rowsContainer');
+  var emptyState = document.getElementById('emptyState');
+  var panelCount = document.getElementById('panelCount');
+  var toast = document.getElementById('toast');
+  var clock = document.getElementById('clock');
+
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(function(){ toast.classList.remove('show'); }, 1800);
+  }
+
+  function updateCount(){
+    var n = rowsContainer.children.length;
+    panelCount.textContent = n + (n === 1 ? ' link' : ' links');
+    emptyState.style.display = n ? 'none' : '';
+  }
+
+  function fmtDate(d){
+    try{ return new Date(d).toLocaleDateString(); } catch(e){ return '—'; }
+  }
+
+  function rowHTML(shortd, redirecturl, hits, createdAt){
+    return (
+      '<div class="row enter" data-id="' + shortd + '">' +
+        '<span class="code">' + shortd + '</span>' +
+        '<span class="dest"><a href="' + redirecturl + '" target="_blank" rel="noopener">' + redirecturl + '</a></span>' +
+        '<span class="hits">' + hits + '</span>' +
+        '<span class="made">' + fmtDate(createdAt) + '</span>' +
+        '<span class="row-actions">' +
+          '<button class="icon-btn" data-action="copy" data-code="' + shortd + '" title="Copy">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>' +
+          '</button>' +
+          '<button class="icon-btn danger" data-action="delete" data-code="' + shortd + '" title="Delete">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>' +
+          '</button>' +
+        '</span>' +
+      '</div>'
+    );
+  }
+
+  function copyText(text){
+    if(navigator.clipboard && window.isSecureContext){
+      return navigator.clipboard.writeText(text);
+    }
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try{ document.execCommand('copy'); } catch(e){}
+    document.body.removeChild(ta);
+    return Promise.resolve();
+  }
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    errorBox.classList.remove('show');
+    var url = input.value.trim();
+    if(!url) return;
+
+    btn.classList.add('loading');
+    btn.disabled = true;
+    input.classList.add('spooling');
+
+    fetch('/url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: url })
+    })
+    .then(function(res){
+      return res.json().then(function(data){ return { ok: res.ok, data: data }; });
+    })
+    .then(function(out){
+      btn.classList.remove('loading');
+      btn.disabled = false;
+      input.classList.remove('spooling');
+
+      if(!out.ok){
+        errorBox.textContent = out.data.error || 'Something went wrong. Try again.';
+        errorBox.classList.add('show');
+        return;
+      }
+
+      var shortd = out.data.id;
+      var shortUrl = ORIGIN + '/' + shortd;
+
+      resultLink.textContent = shortUrl;
+      resultLink.href = shortUrl;
+      openBtn.href = shortUrl;
+      result.classList.remove('show');
+      void result.offsetWidth;
+      result.classList.add('show');
+
+      rowsContainer.insertAdjacentHTML('afterbegin', rowHTML(shortd, url, 0, new Date()));
+      updateCount();
+
+      input.value = '';
+    })
+    .catch(function(){
+      btn.classList.remove('loading');
+      btn.disabled = false;
+      input.classList.remove('spooling');
+      errorBox.textContent = 'Network hiccup, the server did not respond. Try again.';
+      errorBox.classList.add('show');
+    });
+  });
+
+  copyBtn.addEventListener('click', function(){
+    copyText(resultLink.textContent).then(function(){
+      copyBtn.classList.add('copied');
+      showToast('Copied to clipboard');
+      setTimeout(function(){ copyBtn.classList.remove('copied'); }, 1200);
+    });
+  });
+
+  rowsContainer.addEventListener('click', function(e){
+    var button = e.target.closest('.icon-btn');
+    if(!button) return;
+    var action = button.getAttribute('data-action');
+    var code = button.getAttribute('data-code');
+    if(!code) return;
+
+    if(action === 'copy'){
+      copyText(ORIGIN + '/' + code).then(function(){
+        button.classList.add('copied');
+        showToast('Copied to clipboard');
+        setTimeout(function(){ button.classList.remove('copied'); }, 1200);
+      });
+    }
+
+    if(action === 'delete'){
+      if(button.getAttribute('data-armed') !== 'true'){
+        button.setAttribute('data-armed', 'true');
+        button.title = 'Click again to delete';
+        button.style.borderColor = 'var(--red)';
+        button.style.color = 'var(--red)';
+        setTimeout(function(){
+          button.setAttribute('data-armed', 'false');
+          button.title = 'Delete';
+          button.style.borderColor = '';
+          button.style.color = '';
+        }, 2500);
+        return;
+      }
+
+      var row = button.closest('.row');
+      fetch('/url/' + code, { method: 'DELETE' })
+        .then(function(res){ return res.json(); })
+        .then(function(){
+          row.classList.add('removing');
+          showToast('Link removed');
+          setTimeout(function(){
+            row.remove();
+            updateCount();
+          }, 350);
+        })
+        .catch(function(){
+          showToast('Could not delete, try again');
+        });
+    }
+  });
+
+  function tickClock(){
+    var d = new Date();
+    clock.textContent = d.toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' }) + ' - ' + d.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' });
+  }
+  tickClock();
+  setInterval(tickClock, 30000);
+
+  updateCount();
+})();
+</script>
+
+</body>
+</html>
